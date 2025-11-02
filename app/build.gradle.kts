@@ -16,6 +16,28 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Загрузка API ключей из local.properties
+        val localPropertiesFile = rootProject.file("local.properties")
+        var yandexApiKey = ""
+        var yandexFolderId = ""
+        
+        if (localPropertiesFile.exists()) {
+            val lines = localPropertiesFile.readLines()
+            for (line in lines) {
+                when {
+                    line.startsWith("YANDEX_API_KEY=") -> {
+                        yandexApiKey = line.substringAfter("=").trim()
+                    }
+                    line.startsWith("YANDEX_FOLDER_ID=") -> {
+                        yandexFolderId = line.substringAfter("=").trim()
+                    }
+                }
+            }
+        }
+        
+        buildConfigField("String", "YANDEX_API_KEY", "\"$yandexApiKey\"")
+        buildConfigField("String", "YANDEX_FOLDER_ID", "\"$yandexFolderId\"")
     }
 
     buildTypes {
@@ -36,6 +58,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -49,6 +72,19 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    
+    // Retrofit для HTTP запросов
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp.logging)
+    
+    // Coil для загрузки изображений
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    
+    // ViewModel
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
