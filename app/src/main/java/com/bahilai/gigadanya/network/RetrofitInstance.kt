@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
  * Singleton объект для создания экземпляра Retrofit
  */
 object RetrofitInstance {
-    private const val BASE_URL = "https://llm.api.cloud.yandex.net/"
+    private const val BASE_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = if (BuildConfig.DEBUG) {
@@ -42,5 +42,8 @@ object RetrofitInstance {
     
     val folderId: String
         get() = BuildConfig.YANDEX_FOLDER_ID
+    
+    val agentId: String
+        get() = BuildConfig.YANDEX_AGENT_ID
 }
 
