@@ -1,6 +1,5 @@
 package com.bahilai.gigadanya.viewmodel
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -64,14 +63,8 @@ class ChatViewModel : ViewModel() {
             errorMessage.value = null
             
             try {
-                val modelUri = "agent://${RetrofitInstance.folderId}/${RetrofitInstance.agentId}"
-                Log.d("ChatViewModel", "Model URI: $modelUri")
-                Log.d("ChatViewModel", "API Key exists: ${RetrofitInstance.apiKey.isNotEmpty()}")
-                Log.d("ChatViewModel", "Folder ID: ${RetrofitInstance.folderId}")
-                Log.d("ChatViewModel", "Agent ID: ${RetrofitInstance.agentId}")
-                
                 val request = YandexGptRequest(
-                    modelUri = modelUri,
+                    modelUri = "gpt://${RetrofitInstance.folderId}/yandexgpt-lite",
                     completionOptions = CompletionOptions(
                         stream = false,
                         temperature = 0.6,
@@ -114,17 +107,8 @@ class ChatViewModel : ViewModel() {
                 }
                 
             } catch (e: Exception) {
-                val errorMsg = when {
-                    e.message?.contains("failed to connect") == true -> 
-                        "Ошибка подключения. Проверьте интернет-соединение"
-                    e.message?.contains("timeout") == true -> 
-                        "Превышено время ожидания. Попробуйте еще раз"
-                    e.message?.contains("401") == true || e.message?.contains("403") == true -> 
-                        "Ошибка авторизации. Проверьте API ключи"
-                    else -> "Ошибка: ${e.localizedMessage ?: e.message}"
-                }
-                errorMessage.value = errorMsg
-                Log.e("ChatViewModel", "Error details: ", e)
+                errorMessage.value = "Ошибка: ${e.localizedMessage}"
+                e.printStackTrace()
             } finally {
                 isLoading.value = false
             }
