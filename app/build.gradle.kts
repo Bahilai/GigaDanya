@@ -21,7 +21,6 @@ android {
         val localPropertiesFile = rootProject.file("local.properties")
         var yandexApiKey = ""
         var yandexFolderId = ""
-        var yandexAgentId = ""
         
         if (localPropertiesFile.exists()) {
             val lines = localPropertiesFile.readLines()
@@ -33,16 +32,12 @@ android {
                     line.startsWith("YANDEX_FOLDER_ID=") -> {
                         yandexFolderId = line.substringAfter("=").trim()
                     }
-                    line.startsWith("YANDEX_AGENT_ID=") -> {
-                        yandexAgentId = line.substringAfter("=").trim()
-                    }
                 }
             }
         }
         
         buildConfigField("String", "YANDEX_API_KEY", "\"$yandexApiKey\"")
         buildConfigField("String", "YANDEX_FOLDER_ID", "\"$yandexFolderId\"")
-        buildConfigField("String", "YANDEX_AGENT_ID", "\"$yandexAgentId\"")
     }
 
     buildTypes {
