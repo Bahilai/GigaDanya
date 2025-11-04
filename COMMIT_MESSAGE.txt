@@ -1,0 +1,95 @@
+feat: Migrate to Yandex AI Studio Agent API
+
+Major refactoring to use AI Studio Agent API instead of Foundation Models API.
+
+## New Features:
+- AI Studio Agent integration with prompt management
+- Support for agent-specific configurations and tools
+- Improved error handling for agent responses
+- Agent ID configuration in BuildConfig
+
+## New Files:
+- app/src/main/java/com/bahilai/gigadanya/data/YandexAgentModels.kt
+  * AgentRequest, AgentResponse models
+  * PromptConfig, OutputContent structures
+  * ErrorInfo for error handling
+
+- app/src/main/java/com/bahilai/gigadanya/network/YandexAgentApi.kt
+  * Retrofit interface for Agent API
+  * Endpoint: POST /responses
+
+- AGENT_MIGRATION.md
+  * Detailed migration documentation
+  * API comparison and benefits
+
+- AGENT_SETUP_GUIDE.md
+  * Step-by-step guide for creating agents
+  * Configuration and best practices
+
+- QUICKSTART.md
+  * Quick start guide for new users
+  * Troubleshooting section
+
+## Modified Files:
+- app/build.gradle.kts
+  * Added YANDEX_AGENT_ID loading from local.properties
+  * Generate BuildConfig.YANDEX_AGENT_ID
+
+- app/src/main/java/com/bahilai/gigadanya/network/RetrofitInstance.kt
+  * Added AGENT_BASE_URL: https://rest-assistant.api.cloud.yandex.net/v1/
+  * Created agentRetrofit instance
+  * Added agentApi interface
+  * Added agentId property
+  * Kept old api for backward compatibility
+
+- app/src/main/java/com/bahilai/gigadanya/viewmodel/ChatViewModel.kt
+  * Refactored fetchBotResponse() to use Agent API
+  * Changed to AgentRequest instead of YandexGptRequest
+  * Added structured response handling
+  * Enhanced error handling for agent errors
+
+- README.md
+  * Updated API integration section
+  * Added Agent ID configuration info
+  * Added migration documentation link
+
+- UPDATES.md
+  * Added migration entry with full changelog
+  * Documented all changes and benefits
+
+- local.properties
+  * Added YANDEX_AGENT_ID configuration
+
+## Breaking Changes:
+- API endpoint changed from Foundation Models to Agent API
+- Request/response structure completely different
+- Requires YANDEX_AGENT_ID in configuration
+
+## Migration Notes:
+Users need to:
+1. Create an agent in Yandex AI Studio
+2. Add YANDEX_AGENT_ID to local.properties
+3. Rebuild project to generate new BuildConfig
+
+## Benefits:
+- Flexible agent configuration without code changes
+- Managed prompts and instructions via AI Studio UI
+- Support for tools, knowledge bases, and integrations
+- Agent versioning and A/B testing
+- Better separation of concerns
+
+## Technical Details:
+- Base URL: https://rest-assistant.api.cloud.yandex.net/v1/
+- Endpoint: POST /responses
+- Request: { prompt: { id, variables }, input, stream }
+- Response: { output: [{ content: [{ text, type }] }], status, error }
+
+## Testing:
+- No linter errors
+- Backward compatible API structure maintained
+- Old YandexGptApi kept for reference
+
+See AGENT_MIGRATION.md for detailed migration guide.
+See AGENT_SETUP_GUIDE.md for agent configuration.
+See QUICKSTART.md for quick start instructions.
+
