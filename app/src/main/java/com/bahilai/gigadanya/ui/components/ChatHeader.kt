@@ -1,5 +1,6 @@
 package com.bahilai.gigadanya.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -10,9 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bahilai.gigadanya.R
 
 /**
  * Заголовок чата с аватаром и именем бота
@@ -35,11 +39,14 @@ fun ChatHeader(modifier: Modifier = Modifier) {
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
+                    // Аватар бота - используем загруженное изображение
+                    Image(
+                        painter = painterResource(id = R.drawable.danya_avatar),
                         contentDescription = "Bot Avatar",
-                        modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
                 }
                 

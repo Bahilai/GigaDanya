@@ -23,7 +23,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GigaDanyaTheme {
-                ChatScreen()
+                // Surface с правильными отступами для системных элементов
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.systemBars),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    ChatScreen()
+                }
             }
         }
     }
@@ -47,6 +55,7 @@ fun ChatScreen(
                 isLoading = viewModel.isLoading.value
             )
         }
+        // Убираем настройку contentWindowInsets, чтобы Scaffold автоматически учитывал системные элементы
     ) { paddingValues ->
         Box(
             modifier = Modifier
