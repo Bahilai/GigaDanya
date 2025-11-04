@@ -132,3 +132,4 @@ AsyncImage(
   - `ContentScale.Fit` - вписывает полностью
   - `ContentScale.FillBounds` - растягивает на весь размер
 
+

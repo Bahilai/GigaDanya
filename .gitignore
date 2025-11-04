@@ -13,3 +13,20 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Security - API keys and credentials
+*.key
+*.pem
+*.p12
+*.keystore
+secrets.properties
+credentials.json
+api-keys.txt
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Yandex Cloud specific
+yandex-cloud-key.json
