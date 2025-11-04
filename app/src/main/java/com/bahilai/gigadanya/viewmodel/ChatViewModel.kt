@@ -4,8 +4,10 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bahilai.gigadanya.data.AgentRequest
 import com.bahilai.gigadanya.data.CompletionOptions
 import com.bahilai.gigadanya.data.Message
+import com.bahilai.gigadanya.data.PromptConfig
 import com.bahilai.gigadanya.data.YandexGptRequest
 import com.bahilai.gigadanya.data.YandexMessage
 import com.bahilai.gigadanya.network.RetrofitInstance
@@ -55,7 +57,7 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
-     * Получение ответа от Yandex GPT
+     * Получение ответа от AI Studio Agent
      */
     private fun fetchBotResponse() {
         viewModelScope.launch {
@@ -63,26 +65,34 @@ class ChatViewModel : ViewModel() {
             errorMessage.value = null
             
             try {
-                val request = YandexGptRequest(
-                    modelUri = "gpt://${RetrofitInstance.folderId}/yandexgpt-lite",
-                    completionOptions = CompletionOptions(
-                        stream = false,
-                        temperature = 0.6,
-                        maxTokens = 2000
+                // Формируем входное сообщение из истории разговора
+                val inputText = conversationHistory.lastOrNull()?.text ?: ""
+                
+                val request = AgentRequest(
+                    prompt = PromptConfig(
+                        id = RetrofitInstance.agentId,
+                        variables = null
                     ),
-                    messages = conversationHistory.toList()
+                    input = inputText,
+                    stream = false
                 )
                 
-                val response = RetrofitInstance.api.sendMessage(
+                val response = RetrofitInstance.agentApi.sendMessage(
                     authorization = RetrofitInstance.apiKey,
                     folderId = RetrofitInstance.folderId,
                     request = request
                 )
                 
-                // Получаем текст ответа
-                val botText = response.result.alternatives.firstOrNull()?.message?.text
+                // Обрабатываем ответ агента
+                if (response.error != null) {
+                    errorMessage.value = "Ошибка агента: ${response.error.message}"
+                    return@launch
+                }
                 
-                if (botText != null) {
+                // Получаем текст ответа из структуры агента
+                val botText = response.output?.firstOrNull()?.content?.firstOrNull()?.text
+                
+                if (botText != null && botText.isNotEmpty()) {
                     // Добавляем ответ в историю
                     conversationHistory.add(YandexMessage(role = "assistant", text = botText))
                     
@@ -103,7 +113,7 @@ class ChatViewModel : ViewModel() {
                         addBotMessage(botText)
                     }
                 } else {
-                    errorMessage.value = "Не удалось получить ответ от бота"
+                    errorMessage.value = "Не удалось получить ответ от агента"
                 }
                 
             } catch (e: Exception) {
