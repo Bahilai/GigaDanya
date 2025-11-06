@@ -27,6 +27,9 @@ class ChatViewModel : ViewModel() {
     // Состояние ошибки
     val errorMessage = mutableStateOf<String?>(null)
     
+    // Формат ответа (TEXT или JSON)
+    val responseFormat = mutableStateOf(com.bahilai.gigadanya.data.ResponseFormat.TEXT)
+    
     // История сообщений для контекста API
     private val conversationHistory = mutableListOf<YandexMessage>()
     
@@ -57,7 +60,7 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
-     * Получение ответа от AI Studio Agent
+     * Получение ответа от AI Studio Agent или YandexGPT API
      */
     private fun fetchBotResponse() {
         viewModelScope.launch {
@@ -65,32 +68,16 @@ class ChatViewModel : ViewModel() {
             errorMessage.value = null
             
             try {
-                // Формируем входное сообщение из истории разговора
-                val inputText = conversationHistory.lastOrNull()?.text ?: ""
-                
-                val request = AgentRequest(
-                    prompt = PromptConfig(
-                        id = RetrofitInstance.agentId,
-                        variables = null
-                    ),
-                    input = inputText,
-                    stream = false
-                )
-                
-                val response = RetrofitInstance.agentApi.sendMessage(
-                    authorization = RetrofitInstance.apiKey,
-                    folderId = RetrofitInstance.folderId,
-                    request = request
-                )
-                
-                // Обрабатываем ответ агента
-                if (response.error != null) {
-                    errorMessage.value = "Ошибка агента: ${response.error.message}"
-                    return@launch
+                val botText = when (responseFormat.value) {
+                    com.bahilai.gigadanya.data.ResponseFormat.TEXT -> {
+                        // Используем Agent API для текстового формата
+                        fetchAgentResponse()
+                    }
+                    com.bahilai.gigadanya.data.ResponseFormat.JSON -> {
+                        // Используем прямой YandexGPT API для JSON формата
+                        fetchGptJsonResponse()
+                    }
                 }
-                
-                // Получаем текст ответа из структуры агента
-                val botText = response.output?.firstOrNull()?.content?.firstOrNull()?.text
                 
                 if (botText != null && botText.isNotEmpty()) {
                     // Добавляем ответ в историю
@@ -113,7 +100,7 @@ class ChatViewModel : ViewModel() {
                         addBotMessage(botText)
                     }
                 } else {
-                    errorMessage.value = "Не удалось получить ответ от агента"
+                    errorMessage.value = "Не удалось получить ответ"
                 }
                 
             } catch (e: Exception) {
@@ -122,6 +109,92 @@ class ChatViewModel : ViewModel() {
             } finally {
                 isLoading.value = false
             }
+        }
+    }
+    
+    /**
+     * Получение ответа от Agent API (текстовый формат)
+     */
+    private suspend fun fetchAgentResponse(): String? {
+        val inputText = conversationHistory.lastOrNull()?.text ?: ""
+        
+        val request = AgentRequest(
+            prompt = PromptConfig(
+                id = RetrofitInstance.agentId,
+                variables = null
+            ),
+            input = inputText,
+            stream = false
+        )
+        
+        val response = RetrofitInstance.agentApi.sendMessage(
+            authorization = RetrofitInstance.apiKey,
+            folderId = RetrofitInstance.folderId,
+            request = request
+        )
+        
+        if (response.error != null) {
+            errorMessage.value = "Ошибка агента: ${response.error.message}"
+            return null
+        }
+        
+        return response.output?.firstOrNull()?.content?.firstOrNull()?.text
+    }
+    
+    /**
+     * Получение ответа от YandexGPT API (JSON формат)
+     */
+    private suspend fun fetchGptJsonResponse(): String? {
+        // Создаем копию истории с системным промптом для JSON формата
+        val messagesWithJsonPrompt = mutableListOf<YandexMessage>()
+        
+        // Добавляем системное сообщение для JSON формата
+        messagesWithJsonPrompt.add(
+            YandexMessage(
+                role = "system",
+                text = "Отвечай в формате JSON. Представь результат в виде объекта JSON. Не используй разметку Markdown!"
+            )
+        )
+        
+        // Добавляем историю разговора
+        messagesWithJsonPrompt.addAll(conversationHistory)
+        
+        val request = YandexGptRequest(
+            modelUri = "gpt://${RetrofitInstance.folderId}/yandexgpt/latest",
+            completionOptions = CompletionOptions(
+                stream = false,
+                temperature = 0.6,
+                maxTokens = 2000
+            ),
+            messages = messagesWithJsonPrompt,
+            jsonObject = true
+        )
+        
+        val response = RetrofitInstance.api.sendMessage(
+            authorization = RetrofitInstance.apiKey,
+            folderId = RetrofitInstance.folderId,
+            request = request
+        )
+        
+        val rawText = response.result.alternatives.firstOrNull()?.message?.text
+        
+        // Если формат JSON, извлекаем текст из JSON
+        return if (rawText != null) {
+            extractTextFromJson(rawText)
+        } else {
+            null
+        }
+    }
+    
+    /**
+     * Извлечение читаемого текста из JSON ответа
+     */
+    private fun extractTextFromJson(jsonText: String): String {
+        return try {
+            // Убираем escape-последовательности
+            jsonText.replace("\\n", "\n").replace("\\\"", "\"")
+        } catch (e: Exception) {
+            jsonText
         }
     }
     
@@ -165,6 +238,16 @@ class ChatViewModel : ViewModel() {
         messages.clear()
         conversationHistory.clear()
         addBotMessage("Чат очищен. Чем могу помочь?")
+    }
+    
+    /**
+     * Переключение формата ответа
+     */
+    fun toggleResponseFormat() {
+        responseFormat.value = when (responseFormat.value) {
+            com.bahilai.gigadanya.data.ResponseFormat.TEXT -> com.bahilai.gigadanya.data.ResponseFormat.JSON
+            com.bahilai.gigadanya.data.ResponseFormat.JSON -> com.bahilai.gigadanya.data.ResponseFormat.TEXT
+        }
     }
 }
 

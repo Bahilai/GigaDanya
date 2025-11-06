@@ -52,7 +52,11 @@ fun ChatScreen(
                 onSendMessage = { message ->
                     viewModel.sendMessage(message)
                 },
-                isLoading = viewModel.isLoading.value
+                isLoading = viewModel.isLoading.value,
+                responseFormat = viewModel.responseFormat.value,
+                onFormatToggle = {
+                    viewModel.toggleResponseFormat()
+                }
             )
         }
         // Убираем настройку contentWindowInsets, чтобы Scaffold автоматически учитывал системные элементы
