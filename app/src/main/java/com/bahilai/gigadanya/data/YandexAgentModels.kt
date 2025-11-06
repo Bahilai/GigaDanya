@@ -59,3 +59,41 @@ data class ErrorInfo(
     val code: String?
 )
 
+/**
+ * Форматы вывода для AI-агента
+ */
+enum class ResponseFormat(
+    val displayName: String,
+    val promptInstruction: String
+) {
+    PLAIN(
+        displayName = "Обычный текст",
+        promptInstruction = "Отвечай обычным текстом с разметкой Markdown."
+    ),
+    
+    JSON(
+        displayName = "JSON",
+        promptInstruction = "Представь результат в форме объекта JSON. Нужны только данные без вводных фраз и объяснений. Не используй разметку Markdown!"
+    ),
+    
+    XML(
+        displayName = "XML",
+        promptInstruction = "Представь результат в формате XML. Нужны только данные без вводных фраз и объяснений. Не используй разметку Markdown!"
+    ),
+    
+    WITH_EMOJI(
+        displayName = "С эмодзи",
+        promptInstruction = "Отвечай обычным текстом, но обязательно используй подходящие эмодзи для большей выразительности."
+    ),
+    
+    STRUCTURED_LIST(
+        displayName = "Структурированный список",
+        promptInstruction = "Представь результат в виде структурированного списка с нумерацией и подпунктами. Используй разметку Markdown."
+    ),
+    
+    TABLE(
+        displayName = "Таблица",
+        promptInstruction = "Представь результат в виде таблицы в формате Markdown, если это возможно."
+    )
+}
+

@@ -7,10 +7,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bahilai.gigadanya.ui.components.ChatHeader
+import com.bahilai.gigadanya.ui.components.CompactFormatSelector
 import com.bahilai.gigadanya.ui.components.ImageViewerDialog
 import com.bahilai.gigadanya.ui.components.MessageInput
 import com.bahilai.gigadanya.ui.components.MessageList
@@ -48,12 +50,41 @@ fun ChatScreen(
             ChatHeader()
         },
         bottomBar = {
-            MessageInput(
-                onSendMessage = { message ->
-                    viewModel.sendMessage(message)
-                },
-                isLoading = viewModel.isLoading.value
-            )
+            Column {
+                // Компактный селектор формата над полем ввода
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 4.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Формат:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        CompactFormatSelector(
+                            currentFormat = viewModel.currentResponseFormat.value,
+                            onFormatChange = { format ->
+                                viewModel.changeResponseFormat(format)
+                            }
+                        )
+                    }
+                }
+                
+                MessageInput(
+                    onSendMessage = { message ->
+                        viewModel.sendMessage(message)
+                    },
+                    isLoading = viewModel.isLoading.value
+                )
+            }
         }
         // Убираем настройку contentWindowInsets, чтобы Scaffold автоматически учитывал системные элементы
     ) { paddingValues ->

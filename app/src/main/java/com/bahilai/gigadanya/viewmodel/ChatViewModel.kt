@@ -8,6 +8,7 @@ import com.bahilai.gigadanya.data.AgentRequest
 import com.bahilai.gigadanya.data.CompletionOptions
 import com.bahilai.gigadanya.data.Message
 import com.bahilai.gigadanya.data.PromptConfig
+import com.bahilai.gigadanya.data.ResponseFormat
 import com.bahilai.gigadanya.data.YandexGptRequest
 import com.bahilai.gigadanya.data.YandexMessage
 import com.bahilai.gigadanya.network.RetrofitInstance
@@ -26,6 +27,9 @@ class ChatViewModel : ViewModel() {
     
     // Состояние ошибки
     val errorMessage = mutableStateOf<String?>(null)
+    
+    // Текущий формат ответа
+    val currentResponseFormat = mutableStateOf(ResponseFormat.PLAIN)
     
     // История сообщений для контекста API
     private val conversationHistory = mutableListOf<YandexMessage>()
@@ -57,6 +61,13 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
+     * Изменение формата ответа
+     */
+    fun changeResponseFormat(format: ResponseFormat) {
+        currentResponseFormat.value = format
+    }
+    
+    /**
      * Получение ответа от AI Studio Agent
      */
     private fun fetchBotResponse() {
@@ -65,8 +76,12 @@ class ChatViewModel : ViewModel() {
             errorMessage.value = null
             
             try {
-                // Формируем входное сообщение из истории разговора
-                val inputText = conversationHistory.lastOrNull()?.text ?: ""
+                // Формируем входное сообщение с учетом формата вывода
+                val lastUserMessage = conversationHistory.lastOrNull()?.text ?: ""
+                val formatInstruction = currentResponseFormat.value.promptInstruction
+                
+                // Комбинируем сообщение пользователя с инструкцией по формату
+                val inputText = "$lastUserMessage\n\n[ИНСТРУКЦИЯ ПО ФОРМАТУ]: $formatInstruction"
                 
                 val request = AgentRequest(
                     prompt = PromptConfig(
