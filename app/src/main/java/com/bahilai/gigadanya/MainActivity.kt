@@ -45,7 +45,7 @@ fun ChatScreen(
     
     Scaffold(
         topBar = {
-            ChatHeader(viewModel = viewModel)
+            ChatHeader()
         },
         bottomBar = {
             MessageInput(

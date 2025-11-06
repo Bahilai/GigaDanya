@@ -1,7 +1,6 @@
 package com.bahilai.gigadanya.network
 
 import com.bahilai.gigadanya.BuildConfig
-import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -26,43 +25,25 @@ object RetrofitInstance {
         }
     }
     
-    // Настройка Gson для более гибкой обработки JSON
-    private val gson = GsonBuilder()
-        .setLenient()
-        .serializeNulls()
-        .create()
-    
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
-        .addInterceptor { chain ->
-            val original = chain.request()
-            android.util.Log.d("RetrofitInstance", "Request URL: ${original.url}")
-            android.util.Log.d("RetrofitInstance", "Request Headers: ${original.headers}")
-            
-            val response = chain.proceed(original)
-            android.util.Log.d("RetrofitInstance", "Response Code: ${response.code}")
-            android.util.Log.d("RetrofitInstance", "Response Headers: ${response.headers}")
-            
-            response
-        }
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
         .build()
     
     // Retrofit для Foundation Models API (старый)
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create(gson))
+        .addConverterFactory(GsonConverterFactory.create())
         .build()
     
     // Retrofit для Agent API (новый)
     private val agentRetrofit = Retrofit.Builder()
         .baseUrl(AGENT_BASE_URL)
         .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create(gson))
+        .addConverterFactory(GsonConverterFactory.create())
         .build()
     
     // API интерфейсы

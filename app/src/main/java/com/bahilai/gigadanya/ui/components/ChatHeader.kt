@@ -17,79 +17,53 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bahilai.gigadanya.R
-import com.bahilai.gigadanya.viewmodel.ChatViewModel
 
 /**
  * Заголовок чата с аватаром и именем бота
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatHeader(
-    viewModel: ChatViewModel,
-    modifier: Modifier = Modifier
-) {
+fun ChatHeader(modifier: Modifier = Modifier) {
     TopAppBar(
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.Start
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                // Аватар бота
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Аватар бота
-                    Box(
+                    // Аватар бота - используем загруженное изображение
+                    Image(
+                        painter = painterResource(id = R.drawable.danya_avatar),
+                        contentDescription = "Bot Avatar",
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Аватар бота - используем загруженное изображение
-                        Image(
-                            painter = painterResource(id = R.drawable.danya_avatar),
-                            contentDescription = "Bot Avatar",
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(12.dp))
-                    
-                    // Имя бота и статус
-                    Column {
-                        Text(
-                            text = "GigaDanya",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Бешеный мопед",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
                 }
                 
-                // Переключатель формата
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End
-                ) {
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Имя бота и статус
+                Column {
                     Text(
-                        text = if (viewModel.isJsonFormat.value) "JSON" else "Text",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 8.dp)
+                        text = "GigaDanya",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Switch(
-                        checked = viewModel.isJsonFormat.value,
-                        onCheckedChange = { viewModel.toggleFormat() },
-                        modifier = Modifier.height(24.dp)
+                    Text(
+                        text = "Бешеный мопед",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
