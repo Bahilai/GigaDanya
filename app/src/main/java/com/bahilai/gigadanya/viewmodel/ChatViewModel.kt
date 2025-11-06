@@ -114,94 +114,50 @@ class ChatViewModel : ViewModel() {
     
     /**
      * Получение ответа от Agent API (текстовый формат)
-     * С fallback на YandexGPT API при ошибке
      */
     private suspend fun fetchAgentResponse(): String? {
-        return try {
-            val inputText = conversationHistory.lastOrNull()?.text ?: ""
-            
-            val request = AgentRequest(
-                prompt = PromptConfig(
-                    id = RetrofitInstance.agentId,
-                    variables = null
-                ),
-                input = inputText,
-                stream = false
-            )
-            
-            val response = RetrofitInstance.agentApi.sendMessage(
-                authorization = RetrofitInstance.apiKey,
-                folderId = RetrofitInstance.folderId,
-                request = request
-            )
-            
-            if (response.error != null) {
-                errorMessage.value = "Ошибка агента: ${response.error.message}. Используем YandexGPT API."
-                // Fallback на обычный API
-                return fetchGptTextResponse()
-            }
-            
-            response.output?.firstOrNull()?.content?.firstOrNull()?.text
-        } catch (e: Exception) {
-            // Если Agent API недоступен, используем обычный YandexGPT API
-            errorMessage.value = "Agent API недоступен. Используем YandexGPT API."
-            fetchGptTextResponse()
-        }
-    }
-    
-    /**
-     * Получение ответа от YandexGPT API в текстовом режиме (fallback)
-     */
-    private suspend fun fetchGptTextResponse(): String? {
-        val messagesForText = mutableListOf<YandexMessage>()
+        val inputText = conversationHistory.lastOrNull()?.text ?: ""
         
-        messagesForText.add(
-            YandexMessage(
-                role = "system",
-                text = "Ты - умный ассистент."
-            )
-        )
-        
-        messagesForText.addAll(conversationHistory)
-        
-        val request = YandexGptRequest(
-            modelUri = "gpt://${RetrofitInstance.folderId}/yandexgpt/latest",
-            completionOptions = CompletionOptions(
-                stream = false,
-                temperature = 0.6,
-                maxTokens = 2000
+        val request = AgentRequest(
+            prompt = PromptConfig(
+                id = RetrofitInstance.agentId,
+                variables = null
             ),
-            messages = messagesForText,
-            jsonObject = null
+            input = inputText,
+            stream = false
         )
         
-        val response = RetrofitInstance.api.sendMessage(
+        val response = RetrofitInstance.agentApi.sendMessage(
             authorization = RetrofitInstance.apiKey,
             folderId = RetrofitInstance.folderId,
             request = request
         )
         
-        return response.result.alternatives.firstOrNull()?.message?.text
+        if (response.error != null) {
+            errorMessage.value = "Ошибка агента: ${response.error.message}"
+            return null
+        }
+        
+        return response.output?.firstOrNull()?.content?.firstOrNull()?.text
     }
     
     /**
      * Получение ответа от YandexGPT API (JSON формат)
-     * Возвращает чистый отформатированный JSON
      */
     private suspend fun fetchGptJsonResponse(): String? {
-        // Создаем список сообщений для JSON режима
-        val messagesForJson = mutableListOf<YandexMessage>()
+        // Создаем копию истории с системным промптом для JSON формата
+        val messagesWithJsonPrompt = mutableListOf<YandexMessage>()
         
         // Добавляем системное сообщение для JSON формата
-        messagesForJson.add(
+        messagesWithJsonPrompt.add(
             YandexMessage(
                 role = "system",
-                text = "Ты - умный ассистент."
+                text = "Отвечай в формате JSON. Представь результат в виде объекта JSON. Не используй разметку Markdown!"
             )
         )
         
         // Добавляем историю разговора
-        messagesForJson.addAll(conversationHistory)
+        messagesWithJsonPrompt.addAll(conversationHistory)
         
         val request = YandexGptRequest(
             modelUri = "gpt://${RetrofitInstance.folderId}/yandexgpt/latest",
@@ -210,7 +166,7 @@ class ChatViewModel : ViewModel() {
                 temperature = 0.6,
                 maxTokens = 2000
             ),
-            messages = messagesForJson,
+            messages = messagesWithJsonPrompt,
             jsonObject = true
         )
         
@@ -222,19 +178,24 @@ class ChatViewModel : ViewModel() {
         
         val rawText = response.result.alternatives.firstOrNull()?.message?.text
         
-        // В JSON режиме возвращаем чистый отформатированный JSON
-        return rawText?.let { formatJson(it) }
+        // Если формат JSON, извлекаем текст из JSON
+        return if (rawText != null) {
+            extractTextFromJson(rawText)
+        } else {
+            null
+        }
     }
     
     /**
-     * Форматирование JSON для красивого отображения
-     * Убирает escape-последовательности
+     * Извлечение читаемого текста из JSON ответа
      */
-    private fun formatJson(jsonText: String): String {
-        return jsonText
-            .replace("\\n", "\n")
-            .replace("\\\"", "\"")
-            .replace("\\t", "  ")
+    private fun extractTextFromJson(jsonText: String): String {
+        return try {
+            // Убираем escape-последовательности
+            jsonText.replace("\\n", "\n").replace("\\\"", "\"")
+        } catch (e: Exception) {
+            jsonText
+        }
     }
     
     /**
