@@ -114,50 +114,55 @@ class ChatViewModel : ViewModel() {
     
     /**
      * Получение ответа от Agent API (текстовый формат)
+     * С fallback на YandexGPT API при ошибке
      */
     private suspend fun fetchAgentResponse(): String? {
-        val inputText = conversationHistory.lastOrNull()?.text ?: ""
-        
-        val request = AgentRequest(
-            prompt = PromptConfig(
-                id = RetrofitInstance.agentId,
-                variables = null
-            ),
-            input = inputText,
-            stream = false
-        )
-        
-        val response = RetrofitInstance.agentApi.sendMessage(
-            authorization = RetrofitInstance.apiKey,
-            folderId = RetrofitInstance.folderId,
-            request = request
-        )
-        
-        if (response.error != null) {
-            errorMessage.value = "Ошибка агента: ${response.error.message}"
-            return null
+        return try {
+            val inputText = conversationHistory.lastOrNull()?.text ?: ""
+            
+            val request = AgentRequest(
+                prompt = PromptConfig(
+                    id = RetrofitInstance.agentId,
+                    variables = null
+                ),
+                input = inputText,
+                stream = false
+            )
+            
+            val response = RetrofitInstance.agentApi.sendMessage(
+                authorization = RetrofitInstance.apiKey,
+                folderId = RetrofitInstance.folderId,
+                request = request
+            )
+            
+            if (response.error != null) {
+                errorMessage.value = "Ошибка агента: ${response.error.message}. Используем YandexGPT API."
+                // Fallback на обычный API
+                return fetchGptTextResponse()
+            }
+            
+            response.output?.firstOrNull()?.content?.firstOrNull()?.text
+        } catch (e: Exception) {
+            // Если Agent API недоступен, используем обычный YandexGPT API
+            errorMessage.value = "Agent API недоступен. Используем YandexGPT API."
+            fetchGptTextResponse()
         }
-        
-        return response.output?.firstOrNull()?.content?.firstOrNull()?.text
     }
     
     /**
-     * Получение ответа от YandexGPT API (JSON формат)
+     * Получение ответа от YandexGPT API в текстовом режиме (fallback)
      */
-    private suspend fun fetchGptJsonResponse(): String? {
-        // Создаем копию истории с системным промптом для JSON формата
-        val messagesWithJsonPrompt = mutableListOf<YandexMessage>()
+    private suspend fun fetchGptTextResponse(): String? {
+        val messagesForText = mutableListOf<YandexMessage>()
         
-        // Добавляем системное сообщение для JSON формата
-        messagesWithJsonPrompt.add(
+        messagesForText.add(
             YandexMessage(
                 role = "system",
-                text = "Отвечай в формате JSON. Представь результат в виде объекта JSON. Не используй разметку Markdown!"
+                text = "Ты - умный ассистент."
             )
         )
         
-        // Добавляем историю разговора
-        messagesWithJsonPrompt.addAll(conversationHistory)
+        messagesForText.addAll(conversationHistory)
         
         val request = YandexGptRequest(
             modelUri = "gpt://${RetrofitInstance.folderId}/yandexgpt/latest",
@@ -166,7 +171,46 @@ class ChatViewModel : ViewModel() {
                 temperature = 0.6,
                 maxTokens = 2000
             ),
-            messages = messagesWithJsonPrompt,
+            messages = messagesForText,
+            jsonObject = null
+        )
+        
+        val response = RetrofitInstance.api.sendMessage(
+            authorization = RetrofitInstance.apiKey,
+            folderId = RetrofitInstance.folderId,
+            request = request
+        )
+        
+        return response.result.alternatives.firstOrNull()?.message?.text
+    }
+    
+    /**
+     * Получение ответа от YandexGPT API (JSON формат)
+     * Возвращает чистый отформатированный JSON
+     */
+    private suspend fun fetchGptJsonResponse(): String? {
+        // Создаем список сообщений для JSON режима
+        val messagesForJson = mutableListOf<YandexMessage>()
+        
+        // Добавляем системное сообщение для JSON формата
+        messagesForJson.add(
+            YandexMessage(
+                role = "system",
+                text = "Ты - умный ассистент."
+            )
+        )
+        
+        // Добавляем историю разговора
+        messagesForJson.addAll(conversationHistory)
+        
+        val request = YandexGptRequest(
+            modelUri = "gpt://${RetrofitInstance.folderId}/yandexgpt/latest",
+            completionOptions = CompletionOptions(
+                stream = false,
+                temperature = 0.6,
+                maxTokens = 2000
+            ),
+            messages = messagesForJson,
             jsonObject = true
         )
         
@@ -178,24 +222,19 @@ class ChatViewModel : ViewModel() {
         
         val rawText = response.result.alternatives.firstOrNull()?.message?.text
         
-        // Если формат JSON, извлекаем текст из JSON
-        return if (rawText != null) {
-            extractTextFromJson(rawText)
-        } else {
-            null
-        }
+        // В JSON режиме возвращаем чистый отформатированный JSON
+        return rawText?.let { formatJson(it) }
     }
     
     /**
-     * Извлечение читаемого текста из JSON ответа
+     * Форматирование JSON для красивого отображения
+     * Убирает escape-последовательности
      */
-    private fun extractTextFromJson(jsonText: String): String {
-        return try {
-            // Убираем escape-последовательности
-            jsonText.replace("\\n", "\n").replace("\\\"", "\"")
-        } catch (e: Exception) {
-            jsonText
-        }
+    private fun formatJson(jsonText: String): String {
+        return jsonText
+            .replace("\\n", "\n")
+            .replace("\\\"", "\"")
+            .replace("\\t", "  ")
     }
     
     /**
