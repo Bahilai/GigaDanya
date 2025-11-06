@@ -1,6 +1,9 @@
 package com.bahilai.gigadanya.ui.components
 
+<<<<<<< HEAD
 import androidx.compose.foundation.Image
+=======
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -11,12 +14,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+<<<<<<< HEAD
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bahilai.gigadanya.R
+=======
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
 
 /**
  * Заголовок чата с аватаром и именем бота
@@ -39,6 +48,7 @@ fun ChatHeader(modifier: Modifier = Modifier) {
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
+<<<<<<< HEAD
                     // Аватар бота - используем загруженное изображение
                     Image(
                         painter = painterResource(id = R.drawable.danya_avatar),
@@ -47,6 +57,13 @@ fun ChatHeader(modifier: Modifier = Modifier) {
                             .size(40.dp)
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
+=======
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Bot Avatar",
+                        modifier = Modifier.size(40.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
                     )
                 }
                 

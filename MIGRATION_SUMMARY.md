@@ -90,9 +90,15 @@ POST https://rest-assistant.api.cloud.yandex.net/v1/responses
 ### ✅ Генерация BuildConfig
 ```java
 public final class BuildConfig {
+<<<<<<< HEAD
   public static final String YANDEX_API_KEY = "***"; // Скрыто из соображений безопасности
   public static final String YANDEX_FOLDER_ID = "***"; // Скрыто из соображений безопасности
   public static final String YANDEX_AGENT_ID = "***"; // Скрыто из соображений безопасности
+=======
+  public static final String YANDEX_API_KEY = "AQVN20OMevZHfQyr7bND7Vmv8EFyGpcGjyEYws63";
+  public static final String YANDEX_FOLDER_ID = "b1g9c4e7uvjon9qd842q";
+  public static final String YANDEX_AGENT_ID = "fvtbqlta7fhgog296d1g"; // ✅ НОВОЕ!
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
 }
 ```
 
@@ -215,3 +221,7 @@ public final class BuildConfig {
 **Успешной разработки! 🚀**
 
 *Если есть вопросы - обращайтесь к документации или создайте Issue в репозитории.*
+<<<<<<< HEAD
+=======
+
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1

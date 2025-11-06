@@ -69,7 +69,11 @@
 D/OkHttp: --> POST https://llm.api.cloud.yandex.net/foundationModels/v1/completion
 D/OkHttp: Content-Type: application/json
 D/OkHttp: Authorization: Api-Key ***
+<<<<<<< HEAD
 D/OkHttp: x-folder-id: ***
+=======
+D/OkHttp: x-folder-id: b1g9c4e7uvjon9qd842q
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
 ```
 
 ## Типичные проблемы и решения
@@ -141,3 +145,7 @@ D/OkHttp: x-folder-id: ***
 ---
 
 **Успешного тестирования! 🎯**
+<<<<<<< HEAD
+=======
+
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1

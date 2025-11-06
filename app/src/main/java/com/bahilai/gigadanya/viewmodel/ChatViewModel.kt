@@ -13,6 +13,7 @@ import com.bahilai.gigadanya.data.YandexMessage
 import com.bahilai.gigadanya.network.RetrofitInstance
 import kotlinx.coroutines.launch
 import java.util.UUID
+<<<<<<< HEAD
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,6 +24,8 @@ data class JsonResponse(
     val rawJson: String,
     val formattedText: String
 )
+=======
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
 
 /**
  * ViewModel для управления состоянием чата
@@ -37,9 +40,12 @@ class ChatViewModel : ViewModel() {
     // Состояние ошибки
     val errorMessage = mutableStateOf<String?>(null)
     
+<<<<<<< HEAD
     // Формат ответа (TEXT или JSON)
     val responseFormat = mutableStateOf(com.bahilai.gigadanya.data.ResponseFormat.TEXT)
     
+=======
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
     // История сообщений для контекста API
     private val conversationHistory = mutableListOf<YandexMessage>()
     
@@ -70,7 +76,11 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
+<<<<<<< HEAD
      * Получение ответа от AI Studio Agent или YandexGPT API
+=======
+     * Получение ответа от AI Studio Agent
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
      */
     private fun fetchBotResponse() {
         viewModelScope.launch {
@@ -78,6 +88,7 @@ class ChatViewModel : ViewModel() {
             errorMessage.value = null
             
             try {
+<<<<<<< HEAD
                 when (responseFormat.value) {
                     com.bahilai.gigadanya.data.ResponseFormat.TEXT -> {
                         // Используем Agent API для текстового формата
@@ -119,6 +130,57 @@ class ChatViewModel : ViewModel() {
                             errorMessage.value = "Не удалось получить ответ"
                         }
                     }
+=======
+                // Формируем входное сообщение из истории разговора
+                val inputText = conversationHistory.lastOrNull()?.text ?: ""
+                
+                val request = AgentRequest(
+                    prompt = PromptConfig(
+                        id = RetrofitInstance.agentId,
+                        variables = null
+                    ),
+                    input = inputText,
+                    stream = false
+                )
+                
+                val response = RetrofitInstance.agentApi.sendMessage(
+                    authorization = RetrofitInstance.apiKey,
+                    folderId = RetrofitInstance.folderId,
+                    request = request
+                )
+                
+                // Обрабатываем ответ агента
+                if (response.error != null) {
+                    errorMessage.value = "Ошибка агента: ${response.error.message}"
+                    return@launch
+                }
+                
+                // Получаем текст ответа из структуры агента
+                val botText = response.output?.firstOrNull()?.content?.firstOrNull()?.text
+                
+                if (botText != null && botText.isNotEmpty()) {
+                    // Добавляем ответ в историю
+                    conversationHistory.add(YandexMessage(role = "assistant", text = botText))
+                    
+                    // Проверяем, содержит ли ответ URL изображения
+                    val imageUrl = extractImageUrl(botText)
+                    
+                    if (imageUrl != null) {
+                        // Если есть изображение, создаем сообщение с изображением
+                        val textWithoutUrl = botText.replace(imageUrl, "").trim()
+                        
+                        if (textWithoutUrl.isNotEmpty()) {
+                            addBotMessage(textWithoutUrl)
+                        }
+                        
+                        addBotImage(imageUrl)
+                    } else {
+                        // Обычное текстовое сообщение
+                        addBotMessage(botText)
+                    }
+                } else {
+                    errorMessage.value = "Не удалось получить ответ от агента"
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
                 }
                 
             } catch (e: Exception) {
@@ -131,6 +193,7 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
+<<<<<<< HEAD
      * Получение ответа от Agent API (текстовый формат)
      */
     private suspend fun fetchAgentResponse(): String? {
@@ -315,6 +378,8 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
+=======
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
      * Извлечение URL изображения из текста
      * Поддерживаются форматы: http://, https://
      */
@@ -336,6 +401,7 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
+<<<<<<< HEAD
      * Добавление JSON сообщения от бота
      */
     private fun addBotJsonMessage(formattedText: String, rawJson: String) {
@@ -359,6 +425,8 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
+=======
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
      * Добавление изображения от бота
      */
     private fun addBotImage(imageUrl: String) {
@@ -378,6 +446,7 @@ class ChatViewModel : ViewModel() {
         conversationHistory.clear()
         addBotMessage("Чат очищен. Чем могу помочь?")
     }
+<<<<<<< HEAD
     
     /**
      * Переключение формата ответа
@@ -388,5 +457,7 @@ class ChatViewModel : ViewModel() {
             com.bahilai.gigadanya.data.ResponseFormat.JSON -> com.bahilai.gigadanya.data.ResponseFormat.TEXT
         }
     }
+=======
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
 }
 

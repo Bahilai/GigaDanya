@@ -170,8 +170,13 @@ implementation(libs.coil.network.okhttp)
 2. Выполнена команда `./gradlew generateDebugBuildConfig`
 3. BuildConfig теперь содержит правильные API ключи:
    ```java
+<<<<<<< HEAD
    public static final String YANDEX_API_KEY = "***"; // Скрыто из соображений безопасности
    public static final String YANDEX_FOLDER_ID = "***"; // Скрыто из соображений безопасности
+=======
+   public static final String YANDEX_API_KEY = "AQVNzO1osNSvWXajs-Xm4Vmf1d6f9KHE2e5h2v5j";
+   public static final String YANDEX_FOLDER_ID = "b1g9c4e7uvjon9qd842q";
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
    ```
 
 ### 🔧 Исправление проблемы совместимости Kotlin:

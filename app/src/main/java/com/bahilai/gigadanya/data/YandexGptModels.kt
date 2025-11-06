@@ -6,12 +6,15 @@ import com.google.gson.annotations.SerializedName
  * Модели данных для взаимодействия с Yandex GPT API
  */
 
+<<<<<<< HEAD
 // Формат ответа
 enum class ResponseFormat(val displayName: String, val promptInstruction: String) {
     TEXT("Текст", "Обычный текстовый ответ. Подходит для диалогов и объяснений."),
     JSON("JSON", "Структурированный ответ в формате JSON. Подходит для данных и программирования.")
 }
 
+=======
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
 // Запрос к API
 data class YandexGptRequest(
     @SerializedName("modelUri")
@@ -21,10 +24,14 @@ data class YandexGptRequest(
     val completionOptions: CompletionOptions,
     
     @SerializedName("messages")
+<<<<<<< HEAD
     val messages: List<YandexMessage>,
     
     @SerializedName("json_object")
     val jsonObject: Boolean? = null
+=======
+    val messages: List<YandexMessage>
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
 )
 
 data class CompletionOptions(

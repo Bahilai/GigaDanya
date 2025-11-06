@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GigaDanyaTheme {
+<<<<<<< HEAD
                 // Surface с правильными отступами для системных элементов
                 Surface(
                     modifier = Modifier
@@ -32,6 +33,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     ChatScreen()
                 }
+=======
+                ChatScreen()
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
             }
         }
     }
@@ -52,6 +56,7 @@ fun ChatScreen(
                 onSendMessage = { message ->
                     viewModel.sendMessage(message)
                 },
+<<<<<<< HEAD
                 isLoading = viewModel.isLoading.value,
                 responseFormat = viewModel.responseFormat.value,
                 onFormatToggle = {
@@ -60,6 +65,11 @@ fun ChatScreen(
             )
         }
         // Убираем настройку contentWindowInsets, чтобы Scaffold автоматически учитывал системные элементы
+=======
+                isLoading = viewModel.isLoading.value
+            )
+        }
+>>>>>>> 069cb25bb2159bafe8ca18362048d11512205ac1
     ) { paddingValues ->
         Box(
             modifier = Modifier
