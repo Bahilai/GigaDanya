@@ -13,6 +13,16 @@ import com.bahilai.gigadanya.data.YandexMessage
 import com.bahilai.gigadanya.network.RetrofitInstance
 import kotlinx.coroutines.launch
 import java.util.UUID
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * Data class для хранения JSON ответа
+ */
+data class JsonResponse(
+    val rawJson: String,
+    val formattedText: String
+)
 
 /**
  * ViewModel для управления состоянием чата
@@ -68,39 +78,47 @@ class ChatViewModel : ViewModel() {
             errorMessage.value = null
             
             try {
-                val botText = when (responseFormat.value) {
+                when (responseFormat.value) {
                     com.bahilai.gigadanya.data.ResponseFormat.TEXT -> {
                         // Используем Agent API для текстового формата
-                        fetchAgentResponse()
+                        val botText = fetchAgentResponse()
+                        if (botText != null && botText.isNotEmpty()) {
+                            // Добавляем ответ в историю
+                            conversationHistory.add(YandexMessage(role = "assistant", text = botText))
+                            
+                            // Проверяем, содержит ли ответ URL изображения
+                            val imageUrl = extractImageUrl(botText)
+                            
+                            if (imageUrl != null) {
+                                // Если есть изображение, создаем сообщение с изображением
+                                val textWithoutUrl = botText.replace(imageUrl, "").trim()
+                                
+                                if (textWithoutUrl.isNotEmpty()) {
+                                    addBotMessage(textWithoutUrl)
+                                }
+                                
+                                addBotImage(imageUrl)
+                            } else {
+                                // Обычное текстовое сообщение
+                                addBotMessage(botText)
+                            }
+                        } else {
+                            errorMessage.value = "Не удалось получить ответ"
+                        }
                     }
                     com.bahilai.gigadanya.data.ResponseFormat.JSON -> {
                         // Используем прямой YandexGPT API для JSON формата
-                        fetchGptJsonResponse()
-                    }
-                }
-                
-                if (botText != null && botText.isNotEmpty()) {
-                    // Добавляем ответ в историю
-                    conversationHistory.add(YandexMessage(role = "assistant", text = botText))
-                    
-                    // Проверяем, содержит ли ответ URL изображения
-                    val imageUrl = extractImageUrl(botText)
-                    
-                    if (imageUrl != null) {
-                        // Если есть изображение, создаем сообщение с изображением
-                        val textWithoutUrl = botText.replace(imageUrl, "").trim()
-                        
-                        if (textWithoutUrl.isNotEmpty()) {
-                            addBotMessage(textWithoutUrl)
+                        val jsonResponse = fetchGptJsonResponse()
+                        if (jsonResponse != null) {
+                            // Добавляем форматированный текст в историю
+                            conversationHistory.add(YandexMessage(role = "assistant", text = jsonResponse.formattedText))
+                            
+                            // Добавляем сообщение с JSON
+                            addBotJsonMessage(jsonResponse.formattedText, jsonResponse.rawJson)
+                        } else {
+                            errorMessage.value = "Не удалось получить ответ"
                         }
-                        
-                        addBotImage(imageUrl)
-                    } else {
-                        // Обычное текстовое сообщение
-                        addBotMessage(botText)
                     }
-                } else {
-                    errorMessage.value = "Не удалось получить ответ"
                 }
                 
             } catch (e: Exception) {
@@ -144,7 +162,7 @@ class ChatViewModel : ViewModel() {
     /**
      * Получение ответа от YandexGPT API (JSON формат)
      */
-    private suspend fun fetchGptJsonResponse(): String? {
+    private suspend fun fetchGptJsonResponse(): JsonResponse? {
         // Создаем копию истории с системным промптом для JSON формата
         val messagesWithJsonPrompt = mutableListOf<YandexMessage>()
         
@@ -178,23 +196,121 @@ class ChatViewModel : ViewModel() {
         
         val rawText = response.result.alternatives.firstOrNull()?.message?.text
         
-        // Если формат JSON, извлекаем текст из JSON
+        // Если формат JSON, преобразуем в JsonResponse
         return if (rawText != null) {
-            extractTextFromJson(rawText)
+            val formattedText = convertJsonToText(rawText)
+            JsonResponse(
+                rawJson = formatJsonForDisplay(rawText),
+                formattedText = formattedText
+            )
         } else {
             null
         }
     }
     
     /**
-     * Извлечение читаемого текста из JSON ответа
+     * Форматирование JSON для красивого отображения
      */
-    private fun extractTextFromJson(jsonText: String): String {
+    private fun formatJsonForDisplay(jsonText: String): String {
         return try {
-            // Убираем escape-последовательности
-            jsonText.replace("\\n", "\n").replace("\\\"", "\"")
+            val cleanJson = jsonText.trim()
+            
+            // Пытаемся парсить как объект или массив
+            val jsonObject = if (cleanJson.startsWith("{")) {
+                JSONObject(cleanJson)
+            } else if (cleanJson.startsWith("[")) {
+                JSONArray(cleanJson).toString(2)
+                return JSONArray(cleanJson).toString(2)
+            } else {
+                return cleanJson
+            }
+            
+            jsonObject.toString(2)
         } catch (e: Exception) {
+            // Если не удается парсить, возвращаем исходный текст
             jsonText
+        }
+    }
+    
+    /**
+     * Преобразование JSON в читаемый текст
+     */
+    private fun convertJsonToText(jsonText: String): String {
+        return try {
+            val cleanJson = jsonText.trim()
+            
+            // Пытаемся парсить JSON
+            if (cleanJson.startsWith("{")) {
+                val jsonObject = JSONObject(cleanJson)
+                buildString {
+                    appendLine("📋 JSON Ответ:")
+                    appendLine()
+                    parseJsonObject(jsonObject, this, 0)
+                }
+            } else if (cleanJson.startsWith("[")) {
+                val jsonArray = JSONArray(cleanJson)
+                buildString {
+                    appendLine("📋 JSON Ответ (Массив):")
+                    appendLine()
+                    parseJsonArray(jsonArray, this, 0)
+                }
+            } else {
+                // Не JSON, возвращаем как есть
+                cleanJson
+            }
+        } catch (e: Exception) {
+            // Если не удается парсить, возвращаем исходный текст
+            jsonText
+        }
+    }
+    
+    /**
+     * Рекурсивный парсинг JSON объекта
+     */
+    private fun parseJsonObject(jsonObject: JSONObject, builder: StringBuilder, indent: Int) {
+        val indentStr = "  ".repeat(indent)
+        
+        jsonObject.keys().forEach { key ->
+            val value = jsonObject.get(key)
+            
+            when (value) {
+                is JSONObject -> {
+                    builder.appendLine("$indentStr• $key:")
+                    parseJsonObject(value, builder, indent + 1)
+                }
+                is JSONArray -> {
+                    builder.appendLine("$indentStr• $key:")
+                    parseJsonArray(value, builder, indent + 1)
+                }
+                else -> {
+                    builder.appendLine("$indentStr• $key: $value")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Рекурсивный парсинг JSON массива
+     */
+    private fun parseJsonArray(jsonArray: JSONArray, builder: StringBuilder, indent: Int) {
+        val indentStr = "  ".repeat(indent)
+        
+        for (i in 0 until jsonArray.length()) {
+            val value = jsonArray.get(i)
+            
+            when (value) {
+                is JSONObject -> {
+                    builder.appendLine("$indentStr${i + 1}.")
+                    parseJsonObject(value, builder, indent + 1)
+                }
+                is JSONArray -> {
+                    builder.appendLine("$indentStr${i + 1}.")
+                    parseJsonArray(value, builder, indent + 1)
+                }
+                else -> {
+                    builder.appendLine("$indentStr${i + 1}. $value")
+                }
+            }
         }
     }
     
@@ -217,6 +333,29 @@ class ChatViewModel : ViewModel() {
             isFromUser = false
         )
         messages.add(botMsg)
+    }
+    
+    /**
+     * Добавление JSON сообщения от бота
+     */
+    private fun addBotJsonMessage(formattedText: String, rawJson: String) {
+        // Добавляем форматированный текст
+        val textMsg = Message(
+            id = UUID.randomUUID().toString(),
+            text = formattedText,
+            isFromUser = false,
+            rawJson = null
+        )
+        messages.add(textMsg)
+        
+        // Добавляем сырой JSON в отдельном сообщении
+        val jsonMsg = Message(
+            id = UUID.randomUUID().toString(),
+            text = "🔍 Полный JSON ответ:\n\n$rawJson",
+            isFromUser = false,
+            rawJson = rawJson
+        )
+        messages.add(jsonMsg)
     }
     
     /**

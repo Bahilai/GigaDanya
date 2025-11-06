@@ -7,9 +7,9 @@ import com.google.gson.annotations.SerializedName
  */
 
 // Формат ответа
-enum class ResponseFormat {
-    TEXT,
-    JSON
+enum class ResponseFormat(val displayName: String, val promptInstruction: String) {
+    TEXT("Текст", "Обычный текстовый ответ. Подходит для диалогов и объяснений."),
+    JSON("JSON", "Структурированный ответ в формате JSON. Подходит для данных и программирования.")
 }
 
 // Запрос к API
