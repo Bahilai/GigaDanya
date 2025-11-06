@@ -2,10 +2,12 @@ package com.bahilai.gigadanya.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -95,15 +98,36 @@ fun MessageItem(
             ) {
                 // Текстовое сообщение
                 if (message.text != null) {
-                    Text(
-                        text = message.text,
-                        fontSize = 16.sp,
-                        color = if (message.isFromUser) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSecondaryContainer
+                    val isJson = message.text.trimStart().startsWith("{")
+                    
+                    if (isJson) {
+                        // JSON формат - моноширинный шрифт с горизонтальной прокруткой
+                        Box(
+                            modifier = Modifier.horizontalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = message.text,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = if (message.isFromUser) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                }
+                            )
                         }
-                    )
+                    } else {
+                        // Обычный текст
+                        Text(
+                            text = message.text,
+                            fontSize = 16.sp,
+                            color = if (message.isFromUser) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                            }
+                        )
+                    }
                 }
                 
                 // Изображение
