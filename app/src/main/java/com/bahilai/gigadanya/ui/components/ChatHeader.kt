@@ -53,13 +53,13 @@ fun ChatHeader(modifier: Modifier = Modifier) {
                 // Имя бота и статус
                 Column {
                     Text(
-                        text = "GigaDanya",
+                        text = "Пять экономических экспертов",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Бешеный мопед",
+                        text = "КЕЙНСИАНЕЦ, НЕОКЛАССИК, АВСТРИЕЦ, МАРКСИСТ, МОНЕТАРИСТ",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -4,8 +4,10 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bahilai.gigadanya.data.AgentInfo
 import com.bahilai.gigadanya.data.AgentRequest
 import com.bahilai.gigadanya.data.CompletionOptions
+import com.bahilai.gigadanya.data.EconomicAgents
 import com.bahilai.gigadanya.data.Message
 import com.bahilai.gigadanya.data.PromptConfig
 import com.bahilai.gigadanya.data.YandexGptRequest
@@ -32,7 +34,7 @@ class ChatViewModel : ViewModel() {
     
     init {
         // Добавляем приветственное сообщение от бота
-        addBotMessage("Привет! Я GigaDanya, твой личный бешеный мопед. Чем могу помочь?")
+        addBotMessage("Привет! Задай вопрос по экономике 5 разным экспертам по экономике")
     }
     
     /**
@@ -57,7 +59,7 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
-     * Получение ответа от AI Studio Agent
+     * Получение ответов от всех 5 AI Studio Agents
      */
     private fun fetchBotResponse() {
         viewModelScope.launch {
@@ -68,52 +70,21 @@ class ChatViewModel : ViewModel() {
                 // Формируем входное сообщение из истории разговора
                 val inputText = conversationHistory.lastOrNull()?.text ?: ""
                 
-                val request = AgentRequest(
-                    prompt = PromptConfig(
-                        id = RetrofitInstance.agentId,
-                        variables = null
-                    ),
-                    input = inputText,
-                    stream = false
-                )
-                
-                val response = RetrofitInstance.agentApi.sendMessage(
-                    authorization = RetrofitInstance.apiKey,
-                    folderId = RetrofitInstance.folderId,
-                    request = request
-                )
-                
-                // Обрабатываем ответ агента
-                if (response.error != null) {
-                    errorMessage.value = "Ошибка агента: ${response.error.message}"
-                    return@launch
-                }
-                
-                // Получаем текст ответа из структуры агента
-                val botText = response.output?.firstOrNull()?.content?.firstOrNull()?.text
-                
-                if (botText != null && botText.isNotEmpty()) {
-                    // Добавляем ответ в историю
-                    conversationHistory.add(YandexMessage(role = "assistant", text = botText))
-                    
-                    // Проверяем, содержит ли ответ URL изображения
-                    val imageUrl = extractImageUrl(botText)
-                    
-                    if (imageUrl != null) {
-                        // Если есть изображение, создаем сообщение с изображением
-                        val textWithoutUrl = botText.replace(imageUrl, "").trim()
-                        
-                        if (textWithoutUrl.isNotEmpty()) {
-                            addBotMessage(textWithoutUrl)
+                // Последовательно опрашиваем всех агентов
+                for (agent in EconomicAgents.ALL_AGENTS) {
+                    try {
+                        val response = fetchResponseFromAgent(agent, inputText)
+                        if (response != null) {
+                            processAgentResponse(agent, response)
                         }
-                        
-                        addBotImage(imageUrl)
-                    } else {
-                        // Обычное текстовое сообщение
-                        addBotMessage(botText)
+                    } catch (e: Exception) {
+                        // Если один агент упал, продолжаем работу с остальными
+                        addBotMessage(
+                            text = "Ошибка получения ответа: ${e.localizedMessage}",
+                            agentName = agent.name
+                        )
+                        e.printStackTrace()
                     }
-                } else {
-                    errorMessage.value = "Не удалось получить ответ от агента"
                 }
                 
             } catch (e: Exception) {
@@ -122,6 +93,60 @@ class ChatViewModel : ViewModel() {
             } finally {
                 isLoading.value = false
             }
+        }
+    }
+    
+    /**
+     * Запрос ответа от конкретного агента
+     */
+    private suspend fun fetchResponseFromAgent(agent: AgentInfo, inputText: String): String? {
+        val request = AgentRequest(
+            prompt = PromptConfig(
+                id = agent.id,
+                variables = null
+            ),
+            input = inputText,
+            stream = false
+        )
+        
+        val response = RetrofitInstance.agentApi.sendMessage(
+            authorization = RetrofitInstance.apiKey,
+            folderId = RetrofitInstance.folderId,
+            request = request
+        )
+        
+        // Обрабатываем ответ агента
+        if (response.error != null) {
+            throw Exception(response.error.message)
+        }
+        
+        // Получаем текст ответа из структуры агента
+        return response.output?.firstOrNull()?.content?.firstOrNull()?.text
+    }
+    
+    /**
+     * Обработка ответа от агента
+     */
+    private fun processAgentResponse(agent: AgentInfo, botText: String) {
+        if (botText.isEmpty()) {
+            return
+        }
+        
+        // Проверяем, содержит ли ответ URL изображения
+        val imageUrl = extractImageUrl(botText)
+        
+        if (imageUrl != null) {
+            // Если есть изображение, создаем сообщение с изображением
+            val textWithoutUrl = botText.replace(imageUrl, "").trim()
+            
+            if (textWithoutUrl.isNotEmpty()) {
+                addBotMessage(textWithoutUrl, agent.name)
+            }
+            
+            addBotImage(imageUrl, agent.name)
+        } else {
+            // Обычное текстовое сообщение
+            addBotMessage(botText, agent.name)
         }
     }
     
@@ -137,11 +162,12 @@ class ChatViewModel : ViewModel() {
     /**
      * Добавление текстового сообщения от бота
      */
-    private fun addBotMessage(text: String) {
+    private fun addBotMessage(text: String, agentName: String? = null) {
         val botMsg = Message(
             id = UUID.randomUUID().toString(),
             text = text,
-            isFromUser = false
+            isFromUser = false,
+            agentName = agentName
         )
         messages.add(botMsg)
     }
@@ -149,11 +175,12 @@ class ChatViewModel : ViewModel() {
     /**
      * Добавление изображения от бота
      */
-    private fun addBotImage(imageUrl: String) {
+    private fun addBotImage(imageUrl: String, agentName: String? = null) {
         val imageMsg = Message(
             id = UUID.randomUUID().toString(),
             imageUrl = imageUrl,
-            isFromUser = false
+            isFromUser = false,
+            agentName = agentName
         )
         messages.add(imageMsg)
     }
