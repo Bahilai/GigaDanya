@@ -1,6 +1,7 @@
 package com.bahilai.gigadanya.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,10 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.bahilai.gigadanya.data.EconomicAgents
 import com.bahilai.gigadanya.data.Message
 import kotlinx.coroutines.launch
 
@@ -66,6 +70,12 @@ fun MessageItem(
     onImageClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val agent = if (!message.isFromUser && message.agentName != null) {
+        EconomicAgents.getAgentByName(message.agentName)
+    } else null
+    
+    val agentColor = agent?.let { Color(it.colorHex) }
+    
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = if (message.isFromUser) {
@@ -74,6 +84,33 @@ fun MessageItem(
             Alignment.Start
         }
     ) {
+        // Бейдж с именем агента (только для сообщений от ботов)
+        if (!message.isFromUser && message.agentName != null && agent != null) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = agentColor ?: MaterialTheme.colorScheme.secondaryContainer,
+                modifier = Modifier
+                    .padding(start = 12.dp, bottom = 6.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = agent.emoji,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = message.agentName,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black.copy(alpha = 0.87f)
+                    )
+                }
+            }
+        }
+        
         // Пузырь сообщения
         Surface(
             shape = RoundedCornerShape(
@@ -85,10 +122,24 @@ fun MessageItem(
             color = if (message.isFromUser) {
                 MaterialTheme.colorScheme.primaryContainer
             } else {
-                MaterialTheme.colorScheme.secondaryContainer
+                agentColor?.copy(alpha = 0.15f) ?: MaterialTheme.colorScheme.secondaryContainer
             },
             modifier = Modifier
                 .widthIn(max = 300.dp)
+                .then(
+                    if (agentColor != null && !message.isFromUser) {
+                        Modifier.border(
+                            width = 2.dp,
+                            color = agentColor.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(
+                                topStart = 16.dp,
+                                topEnd = 16.dp,
+                                bottomStart = 4.dp,
+                                bottomEnd = 16.dp
+                            )
+                        )
+                    } else Modifier
+                )
         ) {
             Column(
                 modifier = Modifier.padding(12.dp)
@@ -101,7 +152,7 @@ fun MessageItem(
                         color = if (message.isFromUser) {
                             MaterialTheme.colorScheme.onPrimaryContainer
                         } else {
-                            MaterialTheme.colorScheme.onSecondaryContainer
+                            MaterialTheme.colorScheme.onSurface
                         }
                     )
                 }
