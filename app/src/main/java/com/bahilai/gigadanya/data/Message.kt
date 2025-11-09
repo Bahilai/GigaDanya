@@ -33,7 +33,7 @@ object EconomicAgents {
     
     val AUSTRIAN_SCHOOL = AgentInfo(
         name = "Австрийская школа",
-        id = "fvtk87vgas4rc11i76ap",
+        id = "fvtk87vgas4rclli76ap",
         emoji = "🎻",
         colorHex = 0xFFAB47BC
     )
