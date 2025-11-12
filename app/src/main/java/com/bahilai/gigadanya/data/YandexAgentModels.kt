@@ -35,7 +35,10 @@ data class AgentResponse(
     val status: String?,
     
     @SerializedName("error")
-    val error: ErrorInfo?
+    val error: ErrorInfo?,
+    
+    @SerializedName(value = "usage", alternate = ["usageMetadata", "usage_metadata", "tokenUsage", "token_usage"])
+    val usage: UsageInfo?
 )
 
 data class OutputContent(
@@ -57,5 +60,41 @@ data class ErrorInfo(
     
     @SerializedName("code")
     val code: String?
+)
+
+data class UsageInfo(
+    // Yandex AI Studio Agent API использует input_tokens (не inputTextTokens!)
+    @SerializedName(value = "input_tokens", alternate = ["inputTextTokens", "input_text_tokens", "promptTokens", "prompt_tokens", "inputTokens"])
+    val inputTextTokens: Int?,
+    
+    // Yandex AI Studio Agent API использует output_tokens (не completionTokens!)
+    @SerializedName(value = "output_tokens", alternate = ["completionTokens", "completion_tokens", "outputTokens", "generatedTokens", "generated_tokens"])
+    val completionTokens: Int?,
+    
+    // Yandex AI Studio Agent API использует total_tokens (не totalTokens!)
+    @SerializedName(value = "total_tokens", alternate = ["totalTokens", "allTokens", "all_tokens"])
+    val totalTokens: Int?
+)
+
+/**
+ * Статистика для отдельного агента
+ */
+data class AgentStatistics(
+    val agentInfo: AgentInfo,
+    val responseTime: Long, // в миллисекундах
+    val inputTokens: Int,
+    val outputTokens: Int,
+    val totalTokens: Int,
+    val cost: Double // в рублях
+)
+
+/**
+ * Итоговая статистика по всем агентам
+ */
+data class TotalStatistics(
+    val agentStats: List<AgentStatistics>,
+    val totalResponseTime: Long,
+    val totalTokens: Int,
+    val totalCost: Double
 )
 

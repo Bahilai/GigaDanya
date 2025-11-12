@@ -73,3 +73,32 @@ data class Usage(
     val totalTokens: Int
 )
 
+// Запрос для токенизации
+data class TokenizeRequest(
+    @SerializedName("modelUri")
+    val modelUri: String,
+    
+    @SerializedName("text")
+    val text: String
+)
+
+// Ответ от Tokenize API
+data class TokenizeResponse(
+    @SerializedName("tokens")
+    val tokens: List<Token>,
+    
+    @SerializedName("modelVersion")
+    val modelVersion: String?
+)
+
+data class Token(
+    @SerializedName("id")
+    val id: Long,
+    
+    @SerializedName("text")
+    val text: String,
+    
+    @SerializedName("special")
+    val special: Boolean?
+)
+

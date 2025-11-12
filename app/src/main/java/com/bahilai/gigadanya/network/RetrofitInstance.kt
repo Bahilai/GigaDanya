@@ -1,6 +1,7 @@
 package com.bahilai.gigadanya.network
 
 import com.bahilai.gigadanya.BuildConfig
+import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -19,7 +20,7 @@ object RetrofitInstance {
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = if (BuildConfig.DEBUG) {
-            HttpLoggingInterceptor.Level.BODY
+            HttpLoggingInterceptor.Level.BODY // Логируем все тела запросов и ответов для отладки
         } else {
             HttpLoggingInterceptor.Level.NONE
         }
@@ -32,18 +33,24 @@ object RetrofitInstance {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
     
+    // Настроенный Gson для правильной десериализации
+    private val gson = GsonBuilder()
+        .setLenient() // Разрешаем нестрогий парсинг JSON
+        .serializeNulls() // Не игнорируем null значения
+        .create()
+    
     // Retrofit для Foundation Models API (старый)
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
     
     // Retrofit для Agent API (новый)
     private val agentRetrofit = Retrofit.Builder()
         .baseUrl(AGENT_BASE_URL)
         .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
     
     // API интерфейсы

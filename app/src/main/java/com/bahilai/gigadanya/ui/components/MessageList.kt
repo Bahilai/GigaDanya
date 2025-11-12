@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.bahilai.gigadanya.data.EconomicAgents
 import com.bahilai.gigadanya.data.Message
+import com.bahilai.gigadanya.data.TotalStatistics
 import kotlinx.coroutines.launch
 
 /**
@@ -30,16 +31,18 @@ import kotlinx.coroutines.launch
 fun MessageList(
     messages: List<Message>,
     onImageClick: (String) -> Unit,
+    statistics: TotalStatistics? = null,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     
-    // Автоматическая прокрутка к последнему сообщению
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
+    // Автоматическая прокрутка к последнему элементу (сообщению или статистике)
+    LaunchedEffect(messages.size, statistics) {
+        val totalItems = messages.size + if (statistics != null) 1 else 0
+        if (totalItems > 0) {
             coroutineScope.launch {
-                listState.animateScrollToItem(messages.size - 1)
+                listState.animateScrollToItem(totalItems - 1)
             }
         }
     }
@@ -57,6 +60,13 @@ fun MessageList(
                 message = message,
                 onImageClick = onImageClick
             )
+        }
+        
+        // Добавляем карточку статистики после всех сообщений
+        if (statistics != null) {
+            item(key = "statistics") {
+                StatisticsCard(statistics = statistics)
+            }
         }
     }
 }
