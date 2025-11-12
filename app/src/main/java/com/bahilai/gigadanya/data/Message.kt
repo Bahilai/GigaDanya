@@ -18,35 +18,35 @@ data class AgentInfo(
 
 object EconomicAgents {
     val MONETARIST = AgentInfo(
-        name = "Температура 0.2",
+        name = "YandexGPT 5 Pro (Latest)",
         id = "fvtpijdcg86cuiuta1s0",
         emoji = "💰",
         colorHex = 0xFFFFD54F
     )
     
     val MARXIST = AgentInfo(
-        name = "Температура 0.4",
+        name = "YandexGPT 5 Lite (Latest)",
         id = "fvtt8samocfafo748ubs",
         emoji = "⚒️",
         colorHex = 0xFFEF5350
     )
     
     val AUSTRIAN_SCHOOL = AgentInfo(
-        name = "Температура 0.6",
+        name = "Qwen3 235B A22B Instruct 2507 FP8 (Latest)",
         id = "fvtk87vgas4rclli76ap",
         emoji = "🎻",
         colorHex = 0xFFAB47BC
     )
     
     val NEOCLASSIC = AgentInfo(
-        name = "Температура 0.8",
+        name = "OpenAI GPT OSS 20B (Latest)",
         id = "fvtkje76q0p5k9qtqtjn",
         emoji = "📊",
         colorHex = 0xFF42A5F5
     )
     
     val KEYNESIAN = AgentInfo(
-        name = "Температура 1",
+        name = "OpenAI GPT OSS 120B (Latest)",
         id = "fvtbqlta7fhgog296d1g",
         emoji = "🏛️",
         colorHex = 0xFF66BB6A
