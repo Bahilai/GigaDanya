@@ -74,7 +74,7 @@ object ModelPricingTable {
 }
 
 object EconomicAgents {
-    val MONETARIST = AgentInfo(
+    val DEFAULT_AGENT = AgentInfo(
         name = "YandexGPT 5 Pro (Latest)",
         id = "fvtpijdcg86cuiuta1s0",
         emoji = "💰",
@@ -82,45 +82,7 @@ object EconomicAgents {
         modelType = "yandexgpt-5-pro"
     )
     
-    val MARXIST = AgentInfo(
-        name = "YandexGPT 5 Lite (Latest)",
-        id = "fvtt8samocfafo748ubs",
-        emoji = "⚒️",
-        colorHex = 0xFFEF5350,
-        modelType = "yandexgpt-5-lite"
-    )
-    
-    val AUSTRIAN_SCHOOL = AgentInfo(
-        name = "Qwen3 235B A22B Instruct 2507 FP8 (Latest)",
-        id = "fvtk87vgas4rclli76ap",
-        emoji = "🎻",
-        colorHex = 0xFFAB47BC,
-        modelType = "qwen-235b"
-    )
-    
-    val NEOCLASSIC = AgentInfo(
-        name = "OpenAI GPT OSS 20B (Latest)",
-        id = "fvtkje76q0p5k9qtqtjn",
-        emoji = "📊",
-        colorHex = 0xFF42A5F5,
-        modelType = "openai-gpt-oss-20b"
-    )
-    
-    val KEYNESIAN = AgentInfo(
-        name = "OpenAI GPT OSS 120B (Latest)",
-        id = "fvtbqlta7fhgog296d1g",
-        emoji = "🏛️",
-        colorHex = 0xFF66BB6A,
-        modelType = "openai-gpt-oss-120b"
-    )
-    
-    val ALL_AGENTS = listOf(
-        MONETARIST,
-        MARXIST,
-        AUSTRIAN_SCHOOL,
-        NEOCLASSIC,
-        KEYNESIAN
-    )
+    val ALL_AGENTS = listOf(DEFAULT_AGENT)
     
     fun getAgentByName(name: String): AgentInfo? {
         return ALL_AGENTS.find { it.name == name }

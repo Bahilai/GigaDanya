@@ -66,8 +66,7 @@ fun ChatScreen(
                 messages = viewModel.messages,
                 onImageClick = { imageUrl ->
                     selectedImageUrl = imageUrl
-                },
-                statistics = viewModel.statistics.value
+                }
             )
             
             // Показываем ошибку, если есть
