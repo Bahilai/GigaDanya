@@ -53,13 +53,13 @@ fun ChatHeader(modifier: Modifier = Modifier) {
                 // Имя бота и статус
                 Column {
                     Text(
-                        text = "Пять экспертов",
+                        text = "YandexGPT 5 Pro",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "0.2, 0.4, 0.6, 0.8, 1.0",
+                        text = "С компрессией истории",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
