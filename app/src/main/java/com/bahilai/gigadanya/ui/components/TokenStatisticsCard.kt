@@ -85,7 +85,7 @@ fun TokenStatisticsCard(
                     
                     StatItem(
                         label = "Сэкономлено",
-                        value = "~${stats.savedTokens}",
+                        value = "${stats.savedTokens}",
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )

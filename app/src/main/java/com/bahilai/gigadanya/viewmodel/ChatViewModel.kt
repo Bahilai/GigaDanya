@@ -10,6 +10,7 @@ import com.bahilai.gigadanya.data.CompletionOptions
 import com.bahilai.gigadanya.data.EconomicAgents
 import com.bahilai.gigadanya.data.Message
 import com.bahilai.gigadanya.data.PromptConfig
+import com.bahilai.gigadanya.data.TokenizeRequest
 import com.bahilai.gigadanya.data.YandexGptRequest
 import com.bahilai.gigadanya.data.YandexMessage
 import com.bahilai.gigadanya.data.database.ChatDatabase
@@ -353,14 +354,15 @@ class ChatViewModel(
             val summary = createSummary(conversationText)
             
             if (summary.isNotEmpty()) {
-                // Подсчитываем экономию токенов (приблизительно)
-                val originalTokens = estimateTokens(conversationText)
-                val summaryTokens = estimateTokens(summary)
+                // Подсчитываем экономию токенов через API токенизации Yandex
+                val originalTokens = countTokens(conversationText)
+                val summaryText = "Резюме предыдущего разговора: $summary"
+                val summaryTokens = countTokens(summaryText)
                 val savedTokens = originalTokens - summaryTokens
                 
                 // Заменяем старые сообщения на summary
                 conversationHistory.clear()
-                conversationHistory.add(YandexMessage(role = "system", text = "Резюме предыдущего разговора: $summary"))
+                conversationHistory.add(YandexMessage(role = "system", text = summaryText))
                 conversationHistory.addAll(recentMessages)
                 
                 // Обновляем статистику
@@ -374,7 +376,7 @@ class ChatViewModel(
                 // Сохраняем обновленную историю
                 saveConversationHistory()
                 
-                android.util.Log.d("ChatViewModel", "История сжата: ${messagesForCompression.size} сообщений → summary. Сэкономлено токенов: ~$savedTokens")
+                android.util.Log.d("ChatViewModel", "История сжата: ${messagesForCompression.size} сообщений → summary. Сэкономлено токенов: $savedTokens")
             }
             
         } catch (e: Exception) {
@@ -433,12 +435,31 @@ class ChatViewModel(
     }
     
     /**
-     * Приблизительная оценка количества токенов
+     * Точный подсчет количества токенов через API токенизации Yandex
      */
-    private fun estimateTokens(text: String): Int {
+    private suspend fun countTokens(text: String): Int {
         if (text.isBlank()) return 0
-        // Приблизительная формула: 1 токен ≈ 3.5 символа
-        return (text.length / 3.5).toInt()
+        
+        return try {
+            val modelUri = "gpt://${RetrofitInstance.folderId}/yandexgpt/latest"
+            val request = TokenizeRequest(
+                modelUri = modelUri,
+                text = text
+            )
+            
+            val response = RetrofitInstance.api.tokenize(
+                authorization = RetrofitInstance.apiKey,
+                folderId = RetrofitInstance.folderId,
+                request = request
+            )
+            
+            // Возвращаем точное количество токенов из ответа API
+            response.tokens.size
+        } catch (e: Exception) {
+            android.util.Log.e("ChatViewModel", "Ошибка при подсчете токенов: ${e.message}", e)
+            // В случае ошибки возвращаем 0, чтобы не искажать статистику
+            0
+        }
     }
     
     /**
