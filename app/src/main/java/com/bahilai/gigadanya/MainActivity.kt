@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bahilai.gigadanya.data.database.ChatDatabase
 import com.bahilai.gigadanya.ui.components.ChatHeader
+import com.bahilai.gigadanya.viewmodel.ChatViewModelFactory
 import com.bahilai.gigadanya.ui.components.ImageViewerDialog
 import com.bahilai.gigadanya.ui.components.MessageInput
 import com.bahilai.gigadanya.ui.components.MessageList
@@ -40,13 +43,22 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ChatScreen(
-    viewModel: ChatViewModel = viewModel()
+    viewModel: ChatViewModel = viewModel(
+        factory = ChatViewModelFactory(
+            database = ChatDatabase.getDatabase(
+                context = LocalContext.current.applicationContext
+            )
+        )
+    )
 ) {
     var selectedImageUrl by remember { mutableStateOf<String?>(null) }
+    var showClearDialog by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
-            ChatHeader()
+            ChatHeader(
+                onClearChat = { showClearDialog = true }
+            )
         },
         bottomBar = {
             MessageInput(
@@ -101,6 +113,36 @@ fun ChatScreen(
         ImageViewerDialog(
             imageUrl = imageUrl,
             onDismiss = { selectedImageUrl = null }
+        )
+    }
+    
+    // Диалог подтверждения удаления истории
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            title = {
+                Text("Очистить историю?")
+            },
+            text = {
+                Text("Все сообщения и история разговора будут удалены. Это действие нельзя отменить.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.clearChat()
+                        showClearDialog = false
+                    }
+                ) {
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showClearDialog = false }
+                ) {
+                    Text("Отмена")
+                }
+            }
         )
     }
 }

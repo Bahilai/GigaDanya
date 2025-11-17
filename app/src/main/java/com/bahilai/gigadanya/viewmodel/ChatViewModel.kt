@@ -12,6 +12,11 @@ import com.bahilai.gigadanya.data.Message
 import com.bahilai.gigadanya.data.PromptConfig
 import com.bahilai.gigadanya.data.YandexGptRequest
 import com.bahilai.gigadanya.data.YandexMessage
+import com.bahilai.gigadanya.data.database.ChatDatabase
+import com.bahilai.gigadanya.data.database.toEntity
+import com.bahilai.gigadanya.data.database.toMessage
+import com.bahilai.gigadanya.data.database.toTokenStats
+import com.bahilai.gigadanya.data.database.toYandexMessage
 import com.bahilai.gigadanya.network.RetrofitInstance
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -19,7 +24,9 @@ import java.util.UUID
 /**
  * ViewModel для управления состоянием чата
  */
-class ChatViewModel : ViewModel() {
+class ChatViewModel(
+    private val database: ChatDatabase
+) : ViewModel() {
     // Порог для сжатия истории (количество сообщений перед сжатием)
     private val COMPRESSION_THRESHOLD = 10
     
@@ -46,8 +53,94 @@ class ChatViewModel : ViewModel() {
     )
     
     init {
-        // Добавляем приветственное сообщение от бота
-        addBotMessage("Привет! Чем могу помочь?")
+        // Загружаем данные из базы данных
+        loadDataFromDatabase()
+    }
+    
+    /**
+     * Загрузка данных из базы данных
+     */
+    private fun loadDataFromDatabase() {
+        viewModelScope.launch {
+            try {
+                // Загружаем сообщения
+                val savedMessages = database.messageDao().getAllMessagesSync()
+                if (savedMessages.isNotEmpty()) {
+                    messages.clear()
+                    messages.addAll(savedMessages.map { it.toMessage() })
+                    android.util.Log.d("ChatViewModel", "Загружено ${savedMessages.size} сообщений из базы данных")
+                } else {
+                    // Если нет сохраненных сообщений, добавляем приветственное
+                    addBotMessage("Привет! Чем могу помочь?")
+                }
+                
+                // Загружаем историю разговора
+                val savedHistory = database.yandexMessageDao().getAllMessagesSync()
+                if (savedHistory.isNotEmpty()) {
+                    conversationHistory.clear()
+                    conversationHistory.addAll(savedHistory.map { it.toYandexMessage() })
+                    android.util.Log.d("ChatViewModel", "Загружено ${savedHistory.size} сообщений истории из базы данных")
+                }
+                
+                // Загружаем статистику токенов
+                val savedStats = database.tokenStatsDao().getTokenStatsSync()
+                if (savedStats != null) {
+                    tokenStatistics.value = savedStats.toTokenStats()
+                    android.util.Log.d("ChatViewModel", "Загружена статистика токенов из базы данных")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ChatViewModel", "Ошибка при загрузке данных из базы: ${e.message}", e)
+                // В случае ошибки добавляем приветственное сообщение
+                if (messages.isEmpty()) {
+                    addBotMessage("Привет! Чем могу помочь?")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Сохранение сообщения в базу данных
+     */
+    private fun saveMessage(message: Message) {
+        viewModelScope.launch {
+            try {
+                database.messageDao().insertMessage(message.toEntity())
+            } catch (e: Exception) {
+                android.util.Log.e("ChatViewModel", "Ошибка при сохранении сообщения: ${e.message}", e)
+            }
+        }
+    }
+    
+    /**
+     * Сохранение истории разговора в базу данных
+     */
+    private fun saveConversationHistory() {
+        viewModelScope.launch {
+            try {
+                // Удаляем старую историю и сохраняем новую
+                database.yandexMessageDao().deleteAllMessages()
+                val entities = conversationHistory.map { it.toEntity() }
+                database.yandexMessageDao().insertMessages(entities)
+                android.util.Log.d("ChatViewModel", "Сохранено ${entities.size} сообщений истории в базу данных")
+            } catch (e: Exception) {
+                android.util.Log.e("ChatViewModel", "Ошибка при сохранении истории: ${e.message}", e)
+            }
+        }
+    }
+    
+    /**
+     * Сохранение статистики токенов в базу данных
+     */
+    private fun saveTokenStatistics() {
+        viewModelScope.launch {
+            try {
+                tokenStatistics.value?.let { stats ->
+                    database.tokenStatsDao().insertOrUpdateTokenStats(stats.toEntity())
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ChatViewModel", "Ошибка при сохранении статистики: ${e.message}", e)
+            }
+        }
     }
     
     /**
@@ -63,9 +156,11 @@ class ChatViewModel : ViewModel() {
             isFromUser = true
         )
         messages.add(userMsg)
+        saveMessage(userMsg)
         
         // Добавляем в историю для контекста
         conversationHistory.add(YandexMessage(role = "user", text = userMessage))
+        saveConversationHistory()
         
         // Отправляем запрос к API
         fetchBotResponse()
@@ -167,6 +262,7 @@ class ChatViewModel : ViewModel() {
                 totalInputTokens = currentStats.totalInputTokens + inputTokens,
                 totalOutputTokens = currentStats.totalOutputTokens + outputTokens
             )
+            saveTokenStatistics()
             
             android.util.Log.d("ChatViewModel", "Токены: входные=$inputTokens, выходные=$outputTokens, всего=${usage.totalTokens ?: 0}")
         }
@@ -184,6 +280,7 @@ class ChatViewModel : ViewModel() {
         
         // Добавляем ответ в историю для контекста
         conversationHistory.add(YandexMessage(role = "assistant", text = botText))
+        saveConversationHistory()
         
         // Проверяем, нужно ли сжимать историю
         if (shouldCompressHistory()) {
@@ -272,6 +369,10 @@ class ChatViewModel : ViewModel() {
                     compressionCount = currentStats.compressionCount + 1,
                     savedTokens = currentStats.savedTokens + savedTokens
                 )
+                saveTokenStatistics()
+                
+                // Сохраняем обновленную историю
+                saveConversationHistory()
                 
                 android.util.Log.d("ChatViewModel", "История сжата: ${messagesForCompression.size} сообщений → summary. Сэкономлено токенов: ~$savedTokens")
             }
@@ -326,6 +427,7 @@ class ChatViewModel : ViewModel() {
             totalInputTokens = currentStats.totalInputTokens + inputTokens,
             totalOutputTokens = currentStats.totalOutputTokens + outputTokens
         )
+        saveTokenStatistics()
         
         return summary
     }
@@ -358,6 +460,7 @@ class ChatViewModel : ViewModel() {
             isFromUser = false
         )
         messages.add(botMsg)
+        saveMessage(botMsg)
     }
     
     /**
@@ -370,16 +473,31 @@ class ChatViewModel : ViewModel() {
             isFromUser = false
         )
         messages.add(imageMsg)
+        saveMessage(imageMsg)
     }
     
     /**
      * Очистка истории чата
      */
     fun clearChat() {
-        messages.clear()
-        conversationHistory.clear()
-        tokenStatistics.value = null
-        addBotMessage("Чат очищен. Чем могу помочь?")
+        viewModelScope.launch {
+            try {
+                // Очищаем в памяти
+                messages.clear()
+                conversationHistory.clear()
+                tokenStatistics.value = null
+                
+                // Очищаем в базе данных
+                database.messageDao().deleteAllMessages()
+                database.yandexMessageDao().deleteAllMessages()
+                database.tokenStatsDao().deleteTokenStats()
+                
+                // Добавляем приветственное сообщение
+                addBotMessage("Чат очищен. Чем могу помочь?")
+            } catch (e: Exception) {
+                android.util.Log.e("ChatViewModel", "Ошибка при очистке чата: ${e.message}", e)
+            }
+        }
     }
 }
 

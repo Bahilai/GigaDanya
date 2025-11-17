@@ -4,6 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,7 +23,10 @@ import com.bahilai.gigadanya.R
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatHeader(modifier: Modifier = Modifier) {
+fun ChatHeader(
+    onClearChat: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     TopAppBar(
         title = {
             Row(
@@ -64,6 +69,19 @@ fun ChatHeader(modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        },
+        actions = {
+            // Кнопка удаления истории
+            IconButton(
+                onClick = onClearChat,
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Очистить историю",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
